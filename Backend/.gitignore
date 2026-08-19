@@ -1,0 +1,13 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.userprefs
+project.lock.json
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
