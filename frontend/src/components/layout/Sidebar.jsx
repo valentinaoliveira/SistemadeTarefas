@@ -10,12 +10,15 @@ import {
   useNavigate,
 } from "react-router";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 function Sidebar() {
   const navigate = useNavigate();
 
+  const { user, logout } = useAuth();
+
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
 
     navigate("/");
   }
@@ -27,7 +30,9 @@ function Sidebar() {
           <ListTodo size={25} />
         </div>
 
-        <span>Sistema de Tarefas</span>
+        <span>
+          Sistema de Tarefas
+        </span>
       </div>
 
       <nav className="sidebar-menu">
@@ -41,7 +46,9 @@ function Sidebar() {
         >
           <LayoutDashboard size={20} />
 
-          <span>Dashboard</span>
+          <span>
+            Dashboard
+          </span>
         </NavLink>
 
         <NavLink
@@ -54,21 +61,24 @@ function Sidebar() {
         >
           <ListTodo size={20} />
 
-          <span>Tarefas</span>
+          <span>
+            Tarefas
+          </span>
         </NavLink>
 
-        <NavLink
-          to="/usuarios"
-          className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
-          }
-        >
-          <Users size={20} />
-
-          <span>Usuários</span>
-        </NavLink>
+       {user?.role === "Admin" && (
+  <NavLink
+    to="/usuarios"
+    className={({ isActive }) =>
+      isActive
+        ? "sidebar-link active"
+        : "sidebar-link"
+    }
+  >
+    <Users size={20} />
+    <span>Usuários</span>
+  </NavLink>
+)}
       </nav>
 
       <button
@@ -78,7 +88,9 @@ function Sidebar() {
       >
         <LogOut size={20} />
 
-        <span>Sair</span>
+        <span>
+          Sair
+        </span>
       </button>
     </aside>
   );

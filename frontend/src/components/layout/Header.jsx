@@ -5,17 +5,29 @@ import {
 } from "lucide-react";
 
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Header() {
-  const { theme, toggleTheme } = useTheme();
+  const {
+    theme,
+    toggleTheme,
+  } = useTheme();
+
+  const { user } = useAuth();
 
   return (
     <header className="header">
       <div>
-        <h2>Bem-vindo!</h2>
+        <h2>
+          Bem-vindo
+          {user?.nome
+            ? `, ${user.nome}!`
+            : "!"}
+        </h2>
 
         <p>
-          Gerencie suas tarefas e acompanhe seu progresso.
+          Gerencie suas tarefas e acompanhe
+          seu progresso.
         </p>
       </div>
 
@@ -33,7 +45,13 @@ function Header() {
           )}
         </button>
 
-        <div className="user-avatar">
+        <div
+          className="user-avatar"
+          title={
+            user?.email ||
+            "Usuário"
+          }
+        >
           <User size={20} />
         </div>
       </div>

@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Filter,
   Plus,
@@ -9,54 +14,84 @@ import { AnimatePresence } from "motion/react";
 
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
+
 import { useTasks } from "../contexts/TaskContext";
-
-
 
 function Tarefas() {
   const {
-  tarefas,
-  criarTarefa,
-  atualizarTarefa,
-  excluirTarefa,
-} = useTasks();
+    tarefas,
+    carregando,
+    erro,
+    carregarTarefas,
+    criarTarefa,
+    atualizarTarefa,
+    excluirTarefa,
+  } = useTasks();
 
   const [busca, setBusca] =
     useState("");
 
-  const [statusFiltro, setStatusFiltro] =
-    useState("Todos");
+  const [
+    statusFiltro,
+    setStatusFiltro,
+  ] = useState("Todos");
 
-  const [modalAberto, setModalAberto] =
+  const [
+    modalAberto,
+    setModalAberto,
+  ] = useState(false);
+
+  const [
+    tarefaEditando,
+    setTarefaEditando,
+  ] = useState(null);
+
+  const [salvando, setSalvando] =
     useState(false);
 
-  const [tarefaEditando, setTarefaEditando] =
-    useState(null);
-
-  const tarefasFiltradas = useMemo(() => {
-    return tarefas.filter((tarefa) => {
-      const correspondeBusca =
-        tarefa.titulo
-          .toLowerCase()
-          .includes(busca.toLowerCase()) ||
-        tarefa.descricao
-          ?.toLowerCase()
-          .includes(busca.toLowerCase());
-
-      const correspondeStatus =
-        statusFiltro === "Todos" ||
-        tarefa.status === statusFiltro;
-
-      return (
-        correspondeBusca &&
-        correspondeStatus
-      );
+  useEffect(() => {
+    carregarTarefas().catch(() => {
+      // O erro já é tratado no Context.
     });
-  }, [
-    tarefas,
-    busca,
-    statusFiltro,
-  ]);
+  }, [carregarTarefas]);
+
+  const tarefasFiltradas =
+    useMemo(() => {
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
+
+      return tarefas.filter(
+        (tarefa) => {
+          const titulo =
+            tarefa.titulo
+              ?.toLowerCase() ?? "";
+
+          const descricao =
+            tarefa.descricao
+              ?.toLowerCase() ?? "";
+
+          const correspondeBusca =
+            titulo.includes(termo) ||
+            descricao.includes(termo);
+
+          const correspondeStatus =
+            statusFiltro === "Todos" ||
+            tarefa.status ===
+              statusFiltro;
+
+          return (
+            correspondeBusca &&
+            correspondeStatus
+          );
+        }
+      );
+    }, [
+      tarefas,
+      busca,
+      statusFiltro,
+    ]);
 
   function abrirNovaTarefa() {
     setTarefaEditando(null);
@@ -69,40 +104,64 @@ function Tarefas() {
   }
 
   function fecharModal() {
+    if (salvando) {
+      return;
+    }
+
     setModalAberto(false);
     setTarefaEditando(null);
   }
 
-function salvarTarefa(dados) {
-  if (tarefaEditando) {
-    atualizarTarefa(
-      tarefaEditando.id,
-      dados
-    );
-  } else {
-    criarTarefa(dados);
+  async function salvarTarefa(dados) {
+    setSalvando(true);
+
+    try {
+      if (tarefaEditando) {
+        await atualizarTarefa(
+          tarefaEditando.id,
+          dados
+        );
+      } else {
+        await criarTarefa(dados);
+      }
+
+      setModalAberto(false);
+      setTarefaEditando(null);
+    } catch {
+      // O erro já é tratado
+      // pelo TaskContext.
+    } finally {
+      setSalvando(false);
+    }
   }
 
-  fecharModal();
-}
+  async function handleExcluirTarefa(
+    id
+  ) {
+    const confirmar =
+      window.confirm(
+        "Deseja realmente excluir esta tarefa?"
+      );
 
- function handleExcluirTarefa(id) {
-  const confirmar = window.confirm(
-    "Deseja realmente excluir esta tarefa?"
-  );
+    if (!confirmar) {
+      return;
+    }
 
-  if (!confirmar) {
-    return;
+    try {
+      await excluirTarefa(id);
+    } catch {
+      // O erro já é tratado
+      // pelo TaskContext.
+    }
   }
-
-  excluirTarefa(id);
-}
 
   return (
     <div className="tasks-page">
       <div className="tasks-page-header">
         <div className="page-title">
-          <h1>Tarefas</h1>
+          <h1>
+            Tarefas
+          </h1>
 
           <p>
             Organize e acompanhe todas
@@ -116,6 +175,7 @@ function salvarTarefa(dados) {
           onClick={abrirNovaTarefa}
         >
           <Plus size={19} />
+
           Nova tarefa
         </button>
       </div>
@@ -129,7 +189,9 @@ function salvarTarefa(dados) {
             placeholder="Buscar tarefa..."
             value={busca}
             onChange={(event) =>
-              setBusca(event.target.value)
+              setBusca(
+                event.target.value
+              )
             }
           />
         </div>
@@ -145,55 +207,78 @@ function salvarTarefa(dados) {
               )
             }
           >
-            <option>
+            <option value="Todos">
               Todos
             </option>
 
-            <option>
+            <option value="Pendente">
               Pendente
             </option>
 
-            <option>
+            <option value="Em andamento">
               Em andamento
             </option>
 
-            <option>
+            <option value="Concluída">
               Concluída
             </option>
           </select>
         </div>
       </section>
 
-      <div className="task-count">
-        {tarefasFiltradas.length} tarefa(s)
-      </div>
-
-      <section className="tasks-grid">
-        <AnimatePresence>
-          {tarefasFiltradas.map(
-            (tarefa) => (
-              <TaskCard
-                key={tarefa.id}
-                tarefa={tarefa}
-                onEdit={editarTarefa}
-               onDelete={handleExcluirTarefa}
-              />
-            )
-          )}
-        </AnimatePresence>
-      </section>
-
-      {tarefasFiltradas.length === 0 && (
-        <div className="empty-state">
-          <h3>
-            Nenhuma tarefa encontrada
-          </h3>
-
-          <p>
-            Tente alterar os filtros ou
-            crie uma nova tarefa.
-          </p>
+      {erro && (
+        <div className="page-error">
+          {erro}
         </div>
+      )}
+
+      {carregando ? (
+        <div className="tasks-loading">
+          Carregando tarefas...
+        </div>
+      ) : (
+        <>
+          <div className="task-count">
+            {tarefasFiltradas.length}
+            {" "}
+            tarefa(s)
+          </div>
+
+          <section className="tasks-grid">
+            <AnimatePresence>
+              {tarefasFiltradas.map(
+                (tarefa) => (
+                  <TaskCard
+                    key={tarefa.id}
+                    tarefa={tarefa}
+                    onEdit={() =>
+                      editarTarefa(
+                        tarefa
+                      )
+                    }
+                    onDelete={
+                      handleExcluirTarefa
+                    }
+                  />
+                )
+              )}
+            </AnimatePresence>
+          </section>
+
+          {tarefasFiltradas.length ===
+            0 && (
+            <div className="empty-state">
+              <h3>
+                Nenhuma tarefa encontrada
+              </h3>
+
+              <p>
+                Crie uma nova tarefa ou
+                altere os filtros.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       <AnimatePresence>

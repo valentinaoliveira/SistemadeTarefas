@@ -1,34 +1,79 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useState,
 } from "react";
 
+import api from "../services/api";
+
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("user");
+function carregarUsuarioSalvo() {
+  try {
+    const savedUser =
+      localStorage.getItem("user");
 
-    return savedUser
-      ? JSON.parse(savedUser)
-      : null;
-  });
+    if (!savedUser) {
+      return null;
+    }
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem("token");
-  });
+    return JSON.parse(savedUser);
+  } catch {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
 
-  function login(loginResponse) {
+    return null;
+  }
+}
+
+function converterRole(role) {
+  if (
+    role === 2 ||
+    role === "Admin"
+  ) {
+    return "Admin";
+  }
+
+  return "User";
+}
+
+export function AuthProvider({
+  children,
+}) {
+  const [user, setUser] =
+    useState(carregarUsuarioSalvo);
+
+  const [token, setToken] =
+    useState(() => {
+      return localStorage.getItem(
+        "token"
+      );
+    });
+
+  async function login(email, senha) {
+    const response =
+      await api.post(
+        "/Auth/login",
+        {
+          email,
+          senha,
+        }
+      );
+
+    const data = response.data;
+
     const loggedUser = {
-      id: loginResponse.usuarioId,
-      nome: loginResponse.nome,
-      email: loginResponse.email,
-      role: loginResponse.role,
+      id: data.usuarioId,
+      nome: data.nome,
+      email: data.email,
+      role: converterRole(
+        data.role
+      ),
     };
 
     setUser(loggedUser);
-    setToken(loginResponse.token);
+    setToken(data.token);
 
     localStorage.setItem(
       "user",
@@ -37,8 +82,10 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem(
       "token",
-      loginResponse.token
+      data.token
     );
+
+    return loggedUser;
   }
 
   function logout() {
@@ -49,6 +96,60 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("token");
   }
 
+  const atualizarUsuarioAtual =
+    useCallback(async () => {
+      if (!token || !user?.id) {
+        return null;
+      }
+
+      try {
+        const response =
+          await api.get(
+            `/Usuarios/${user.id}`
+          );
+
+        const data =
+          response.data;
+
+        const usuarioAtualizado = {
+          id: data.id,
+          nome: data.nome,
+          email: data.email,
+          role: converterRole(
+            data.role
+          ),
+        };
+
+        setUser(
+          usuarioAtualizado
+        );
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(
+            usuarioAtualizado
+          )
+        );
+
+        return usuarioAtualizado;
+      } catch (error) {
+        if (
+          error.response?.status !==
+          401
+        ) {
+          console.error(
+            "Erro ao atualizar usuário:",
+            error
+          );
+        }
+
+        throw error;
+      }
+    }, [
+      token,
+      user?.id,
+    ]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -56,7 +157,10 @@ export function AuthProvider({ children }) {
         token,
         login,
         logout,
-        isAuthenticated: !!token,
+        atualizarUsuarioAtual,
+
+        isAuthenticated:
+          !!token && !!user,
       }}
     >
       {children}

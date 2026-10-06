@@ -10,28 +10,53 @@ import {
 import { motion } from "motion/react";
 
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
 
   const { theme, toggleTheme } = useTheme();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+
   const [mostrarSenha, setMostrarSenha] =
     useState(false);
 
-  function handleSubmit(event) {
+  const [erro, setErro] = useState("");
+
+  const [carregando, setCarregando] =
+    useState(false);
+
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    console.log({
-      email,
-      senha,
-    });
+    setErro("");
+    setCarregando(true);
 
-    // Temporário enquanto o backend
-    // não estiver disponível.
-    navigate("/dashboard");
+    try {
+      await login(email, senha);
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(
+        "Erro ao realizar login:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        setErro(
+          "E-mail ou senha incorretos."
+        );
+      } else {
+        setErro(
+          "Não foi possível conectar ao servidor."
+        );
+      }
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -92,6 +117,7 @@ function Login() {
               onChange={(event) =>
                 setEmail(event.target.value)
               }
+              disabled={carregando}
               required
             />
           </div>
@@ -112,8 +138,11 @@ function Login() {
                 placeholder="Digite sua senha"
                 value={senha}
                 onChange={(event) =>
-                  setSenha(event.target.value)
+                  setSenha(
+                    event.target.value
+                  )
                 }
+                disabled={carregando}
                 required
               />
 
@@ -125,6 +154,12 @@ function Login() {
                     (value) => !value
                   )
                 }
+                disabled={carregando}
+                aria-label={
+                  mostrarSenha
+                    ? "Ocultar senha"
+                    : "Mostrar senha"
+                }
               >
                 {mostrarSenha ? (
                   <EyeOff size={19} />
@@ -135,17 +170,34 @@ function Login() {
             </div>
           </div>
 
+          {erro && (
+            <div className="login-error">
+              {erro}
+            </div>
+          )}
+
           <motion.button
             className="login-button"
             type="submit"
-            whileHover={{
-              scale: 1.02,
-            }}
-            whileTap={{
-              scale: 0.98,
-            }}
+            disabled={carregando}
+            whileHover={
+              carregando
+                ? {}
+                : {
+                    scale: 1.02,
+                  }
+            }
+            whileTap={
+              carregando
+                ? {}
+                : {
+                    scale: 0.98,
+                  }
+            }
           >
-            Entrar
+            {carregando
+              ? "Entrando..."
+              : "Entrar"}
           </motion.button>
         </form>
 

@@ -1448,3 +1448,81 @@ button {
     width: 100%;
   }
 }
+/* =========================
+   LOGIN - ERROS
+========================= */
+
+.login-error {
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+
+  background: #fef2f2;
+  color: #dc2626;
+
+  font-size: 13px;
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.page-error {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+
+  background: #fef2f2;
+  color: #dc2626;
+
+  font-size: 13px;
+}
+
+.tasks-loading {
+  padding: 50px 20px;
+
+  text-align: center;
+
+  color: #6b7280;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+[data-theme="dark"] .tasks-loading {
+  background: #1f2937;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+.user-form-info {
+  padding: 11px 13px;
+  border-radius: 10px;
+
+  background: #f3f4f6;
+  color: #6b7280;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.form-group select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.user-row-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

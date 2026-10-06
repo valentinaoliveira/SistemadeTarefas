@@ -135,15 +135,15 @@ function TaskForm({
                 value={form.status}
                 onChange={handleChange}
               >
-                <option>
+                <option value="Pendente">
                   Pendente
                 </option>
 
-                <option>
+                <option value="Em andamento">
                   Em andamento
                 </option>
 
-                <option>
+                <option value="Concluída">
                   Concluída
                 </option>
               </select>
@@ -160,17 +160,18 @@ function TaskForm({
                 value={form.prioridade}
                 onChange={handleChange}
               >
-                <option>
+                <option value="Baixa">
                   Baixa
                 </option>
 
-                <option>
+                <option value="Média">
                   Média
                 </option>
 
-                <option>
+                <option value="Alta">
                   Alta
                 </option>
+
               </select>
             </div>
           </div>

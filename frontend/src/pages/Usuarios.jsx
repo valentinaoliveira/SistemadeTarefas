@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Pencil,
   Plus,
@@ -8,84 +13,214 @@ import {
   User,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 
-const usuariosIniciais = [
-  {
-    id: 1,
-    nome: "Administrador",
-    email: "admin@email.com",
-    role: "Admin",
-  },
-  {
-    id: 2,
-    nome: "Usuário Teste",
-    email: "teste@email.com",
-    role: "User",
-  },
-];
+import {
+  AnimatePresence,
+  motion,
+} from "motion/react";
+
+import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 const formInicial = {
   nome: "",
   email: "",
+  senha: "",
   role: "User",
 };
 
+function converterRole(role) {
+  if (
+    role === 2 ||
+    role === "Admin"
+  ) {
+    return "Admin";
+  }
+
+  return "User";
+}
+
 function Usuarios() {
+  const {
+    user,
+    atualizarUsuarioAtual,
+  } = useAuth();
+
   const [usuarios, setUsuarios] =
-    useState(usuariosIniciais);
+    useState([]);
 
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] =
+    useState("");
 
-  const [modalAberto, setModalAberto] =
-    useState(false);
+  const [
+    modalAberto,
+    setModalAberto,
+  ] = useState(false);
 
-  const [usuarioEditando, setUsuarioEditando] =
-    useState(null);
+  const [
+    usuarioEditando,
+    setUsuarioEditando,
+  ] = useState(null);
 
-  const [form, setForm] = useState(formInicial);
+  const [form, setForm] =
+    useState(formInicial);
 
-  const usuariosFiltrados = useMemo(() => {
-    const termo = busca.toLowerCase();
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
 
-    return usuarios.filter((usuario) => {
-      return (
-        usuario.nome
-          .toLowerCase()
-          .includes(termo) ||
-        usuario.email
-          .toLowerCase()
-          .includes(termo)
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
+
+  const [erro, setErro] =
+    useState("");
+
+  async function sincronizarUsuario() {
+    try {
+      await atualizarUsuarioAtual();
+    } catch (error) {
+      if (
+        error.response?.status !== 401
+      ) {
+        console.error(
+          "Erro ao sincronizar usuário:",
+          error
+        );
+      }
+    }
+  }
+
+  async function carregarUsuarios() {
+    setCarregando(true);
+    setErro("");
+
+    try {
+      const response =
+        await api.get("/Usuarios");
+
+      setUsuarios(
+        response.data
       );
-    });
-  }, [usuarios, busca]);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar usuários:",
+        error
+      );
+
+      if (
+        error.response?.status === 403
+      ) {
+        await sincronizarUsuario();
+
+        setErro(
+          "Seu perfil foi atualizado e você não possui mais permissão para acessar esta área."
+        );
+      } else if (
+        error.response?.status !== 401
+      ) {
+        setErro(
+          "Não foi possível carregar os usuários."
+        );
+      }
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarUsuarios();
+
+    // Executa quando a página é aberta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const usuariosFiltrados =
+    useMemo(() => {
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
+
+      return usuarios.filter(
+        (usuario) => {
+          const nome =
+            usuario.nome
+              ?.toLowerCase() ?? "";
+
+          const email =
+            usuario.email
+              ?.toLowerCase() ?? "";
+
+          return (
+            nome.includes(termo) ||
+            email.includes(termo)
+          );
+        }
+      );
+    }, [
+      usuarios,
+      busca,
+    ]);
 
   function abrirNovoUsuario() {
     setUsuarioEditando(null);
-    setForm(formInicial);
+
+    setForm({
+      ...formInicial,
+    });
+
+    setErro("");
     setModalAberto(true);
   }
 
   function abrirEdicao(usuario) {
-    setUsuarioEditando(usuario);
+    setUsuarioEditando(
+      usuario
+    );
 
     setForm({
-      nome: usuario.nome,
-      email: usuario.email,
-      role: usuario.role,
+      nome:
+        usuario.nome,
+
+      email:
+        usuario.email,
+
+      senha: "",
+
+      role:
+        converterRole(
+          usuario.role
+        ),
     });
 
+    setErro("");
     setModalAberto(true);
   }
 
   function fecharModal() {
+    if (salvando) {
+      return;
+    }
+
     setModalAberto(false);
-    setUsuarioEditando(null);
-    setForm(formInicial);
+
+    setUsuarioEditando(
+      null
+    );
+
+    setForm({
+      ...formInicial,
+    });
   }
 
   function handleChange(event) {
-    const { name, value } = event.target;
+    const {
+      name,
+      value,
+    } = event.target;
 
     setForm((current) => ({
       ...current,
@@ -93,69 +228,208 @@ function Usuarios() {
     }));
   }
 
-  function salvarUsuario(event) {
+  async function salvarUsuario(
+    event
+  ) {
     event.preventDefault();
 
-    if (usuarioEditando) {
-      setUsuarios((current) =>
-        current.map((usuario) =>
-          usuario.id === usuarioEditando.id
-            ? {
-                ...usuario,
-                ...form,
-              }
-            : usuario
-        )
+    setSalvando(true);
+    setErro("");
+
+    try {
+      if (usuarioEditando) {
+        await api.put(
+          `/Usuarios/${usuarioEditando.id}`,
+          {
+            nome:
+              form.nome,
+
+            email:
+              form.email,
+          }
+        );
+
+        const roleAtual =
+          converterRole(
+            usuarioEditando.role
+          );
+
+        const alterouRole =
+          roleAtual !==
+          form.role;
+
+        const ehProprioUsuario =
+          usuarioEditando.id ===
+          user?.id;
+
+        if (
+          alterouRole &&
+          !ehProprioUsuario
+        ) {
+          await api.patch(
+            `/Usuarios/${usuarioEditando.id}/role`,
+            {
+              role:
+                form.role ===
+                "Admin"
+                  ? 2
+                  : 1,
+            }
+          );
+        }
+      } else {
+        await api.post(
+          "/Usuarios",
+          {
+            nome:
+              form.nome,
+
+            email:
+              form.email,
+
+            senha:
+              form.senha,
+          }
+        );
+      }
+
+      await carregarUsuarios();
+
+      setModalAberto(false);
+
+      setUsuarioEditando(
+        null
       );
-    } else {
-      const novoUsuario = {
-        id: Date.now(),
-        ...form,
-      };
 
-      setUsuarios((current) => [
-        novoUsuario,
-        ...current,
-      ]);
+      setForm({
+        ...formInicial,
+      });
+    } catch (error) {
+      console.error(
+        "Erro ao salvar usuário:",
+        error
+      );
+
+      const mensagem =
+        error.response
+          ?.data
+          ?.mensagem;
+
+      if (
+        error.response?.status === 403
+      ) {
+        await sincronizarUsuario();
+
+        setErro(
+          "Seu perfil foi atualizado e você não possui mais permissão para realizar esta operação."
+        );
+
+        setModalAberto(false);
+        setUsuarioEditando(null);
+      } else if (
+        error.response?.status !== 401
+      ) {
+        setErro(
+          mensagem ||
+            "Não foi possível salvar o usuário."
+        );
+      }
+    } finally {
+      setSalvando(false);
     }
-
-    fecharModal();
   }
 
-  function excluirUsuario(id) {
-    const confirmar = window.confirm(
-      "Deseja realmente excluir este usuário?"
-    );
+  async function excluirUsuario(
+    usuario
+  ) {
+    if (
+      usuario.id ===
+      user?.id
+    ) {
+      window.alert(
+        "Você não pode excluir sua própria conta."
+      );
+
+      return;
+    }
+
+    const confirmar =
+      window.confirm(
+        `Deseja realmente excluir ${usuario.nome}?`
+      );
 
     if (!confirmar) {
       return;
     }
 
-    setUsuarios((current) =>
-      current.filter(
-        (usuario) => usuario.id !== id
-      )
-    );
+    setErro("");
+
+    try {
+      await api.delete(
+        `/Usuarios/${usuario.id}`
+      );
+
+      setUsuarios(
+        (current) =>
+          current.filter(
+            (item) =>
+              item.id !==
+              usuario.id
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao excluir usuário:",
+        error
+      );
+
+      const mensagem =
+        error.response
+          ?.data
+          ?.mensagem;
+
+      if (
+        error.response?.status === 403
+      ) {
+        await sincronizarUsuario();
+
+        setErro(
+          "Seu perfil foi atualizado e você não possui mais permissão para excluir usuários."
+        );
+      } else if (
+        error.response?.status !== 401
+      ) {
+        setErro(
+          mensagem ||
+            "Não foi possível excluir o usuário."
+        );
+      }
+    }
   }
 
   return (
     <div className="users-page">
       <div className="users-page-header">
         <div className="page-title">
-          <h1>Usuários</h1>
+          <h1>
+            Usuários
+          </h1>
 
           <p>
-            Gerencie os usuários cadastrados
-            no sistema.
+            Gerencie os usuários
+            cadastrados no sistema.
           </p>
         </div>
 
         <button
           type="button"
           className="primary-button"
-          onClick={abrirNovoUsuario}
+          onClick={
+            abrirNovoUsuario
+          }
         >
           <Plus size={19} />
+
           Novo usuário
         </button>
       </div>
@@ -169,116 +443,192 @@ function Usuarios() {
             placeholder="Buscar por nome ou e-mail..."
             value={busca}
             onChange={(event) =>
-              setBusca(event.target.value)
+              setBusca(
+                event.target.value
+              )
             }
           />
         </div>
       </section>
 
-      <section className="users-table-wrapper">
-        <div className="users-table-header">
-          <span>Usuário</span>
-          <span>E-mail</span>
-          <span>Perfil</span>
-          <span>Ações</span>
+      {erro && (
+        <div className="page-error">
+          {erro}
         </div>
+      )}
 
-        <AnimatePresence>
-          {usuariosFiltrados.map(
-            (usuario) => (
-              <motion.div
-                className="users-table-row"
-                key={usuario.id}
-                layout
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.98,
-                }}
-              >
-                <div className="user-info-cell">
-                  <div className="user-list-avatar">
-                    <User size={18} />
-                  </div>
+      {carregando ? (
+        <div className="tasks-loading">
+          Carregando usuários...
+        </div>
+      ) : (
+        <section className="users-table-wrapper">
+          <div className="users-table-header">
+            <span>
+              Usuário
+            </span>
 
-                  <strong>
-                    {usuario.nome}
-                  </strong>
-                </div>
+            <span>
+              E-mail
+            </span>
 
-                <span>
-                  {usuario.email}
-                </span>
+            <span>
+              Perfil
+            </span>
 
-                <span
-                  className={`user-role ${
-                    usuario.role === "Admin"
-                      ? "admin"
-                      : "user"
-                  }`}
-                >
-                  {usuario.role === "Admin" && (
-                    <ShieldCheck size={15} />
-                  )}
-
-                  {usuario.role}
-                </span>
-
-                <div className="user-row-actions">
-                  <button
-                    type="button"
-                    title="Editar usuário"
-                    onClick={() =>
-                      abrirEdicao(usuario)
-                    }
-                  >
-                    <Pencil size={17} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="delete"
-                    title="Excluir usuário"
-                    onClick={() =>
-                      excluirUsuario(
-                        usuario.id
-                      )
-                    }
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
-              </motion.div>
-            )
-          )}
-        </AnimatePresence>
-
-        {usuariosFiltrados.length === 0 && (
-          <div className="empty-state">
-            <h3>
-              Nenhum usuário encontrado
-            </h3>
-
-            <p>
-              Tente pesquisar por outro nome
-              ou e-mail.
-            </p>
+            <span>
+              Ações
+            </span>
           </div>
-        )}
-      </section>
+
+          <AnimatePresence>
+            {usuariosFiltrados.map(
+              (usuario) => {
+                const role =
+                  converterRole(
+                    usuario.role
+                  );
+
+                const ehUsuarioAtual =
+                  usuario.id ===
+                  user?.id;
+
+                return (
+                  <motion.div
+                    className="users-table-row"
+                    key={
+                      usuario.id
+                    }
+                    layout
+                    initial={{
+                      opacity: 0,
+                      y: 10,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.98,
+                    }}
+                  >
+                    <div className="user-info-cell">
+                      <div className="user-list-avatar">
+                        <User
+                          size={
+                            18
+                          }
+                        />
+                      </div>
+
+                      <strong>
+                        {
+                          usuario.nome
+                        }
+
+                        {ehUsuarioAtual &&
+                          " (você)"}
+                      </strong>
+                    </div>
+
+                    <span>
+                      {
+                        usuario.email
+                      }
+                    </span>
+
+                    <span
+                      className={`user-role ${
+                        role ===
+                        "Admin"
+                          ? "admin"
+                          : "user"
+                      }`}
+                    >
+                      {role ===
+                        "Admin" && (
+                        <ShieldCheck
+                          size={
+                            15
+                          }
+                        />
+                      )}
+
+                      {role}
+                    </span>
+
+                    <div className="user-row-actions">
+                      <button
+                        type="button"
+                        title="Editar usuário"
+                        onClick={() =>
+                          abrirEdicao(
+                            usuario
+                          )
+                        }
+                      >
+                        <Pencil
+                          size={
+                            17
+                          }
+                        />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="delete"
+                        title={
+                          ehUsuarioAtual
+                            ? "Você não pode excluir sua própria conta"
+                            : "Excluir usuário"
+                        }
+                        disabled={
+                          ehUsuarioAtual
+                        }
+                        onClick={() =>
+                          excluirUsuario(
+                            usuario
+                          )
+                        }
+                      >
+                        <Trash2
+                          size={
+                            17
+                          }
+                        />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              }
+            )}
+          </AnimatePresence>
+
+          {usuariosFiltrados.length ===
+            0 && (
+            <div className="empty-state">
+              <h3>
+                Nenhum usuário
+                encontrado
+              </h3>
+
+              <p>
+                Tente pesquisar por
+                outro nome ou e-mail.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       <AnimatePresence>
         {modalAberto && (
           <div
             className="modal-backdrop"
-            onMouseDown={fecharModal}
+            onMouseDown={
+              fecharModal
+            }
           >
             <motion.div
               className="user-modal"
@@ -296,7 +646,9 @@ function Usuarios() {
                 opacity: 0,
                 scale: 0.95,
               }}
-              onMouseDown={(event) =>
+              onMouseDown={(
+                event
+              ) =>
                 event.stopPropagation()
               }
             >
@@ -310,7 +662,7 @@ function Usuarios() {
 
                   <p>
                     {usuarioEditando
-                      ? "Atualize os dados do usuário."
+                      ? "Atualize os dados e o perfil do usuário."
                       : "Preencha os dados do novo usuário."}
                   </p>
                 </div>
@@ -318,15 +670,27 @@ function Usuarios() {
                 <button
                   type="button"
                   className="modal-close"
-                  onClick={fecharModal}
+                  onClick={
+                    fecharModal
+                  }
+                  disabled={
+                    salvando
+                  }
+                  aria-label="Fechar"
                 >
-                  <X size={20} />
+                  <X
+                    size={
+                      20
+                    }
+                  />
                 </button>
               </div>
 
               <form
                 className="task-form"
-                onSubmit={salvarUsuario}
+                onSubmit={
+                  salvarUsuario
+                }
               >
                 <div className="form-group">
                   <label htmlFor="nome">
@@ -336,9 +700,16 @@ function Usuarios() {
                   <input
                     id="nome"
                     name="nome"
-                    value={form.nome}
-                    onChange={handleChange}
+                    value={
+                      form.nome
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="Nome do usuário"
+                    disabled={
+                      salvando
+                    }
                     required
                   />
                 </div>
@@ -352,39 +723,108 @@ function Usuarios() {
                     id="email"
                     name="email"
                     type="email"
-                    value={form.email}
-                    onChange={handleChange}
+                    value={
+                      form.email
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="usuario@email.com"
+                    disabled={
+                      salvando
+                    }
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="role">
-                    Perfil
-                  </label>
+                {usuarioEditando && (
+                  <div className="form-group">
+                    <label htmlFor="role">
+                      Perfil
+                    </label>
 
-                  <select
-                    id="role"
-                    name="role"
-                    value={form.role}
-                    onChange={handleChange}
-                  >
-                    <option value="User">
-                      User
-                    </option>
+                    <select
+                      id="role"
+                      name="role"
+                      value={
+                        form.role
+                      }
+                      onChange={
+                        handleChange
+                      }
+                      disabled={
+                        salvando ||
+                        usuarioEditando.id ===
+                          user?.id
+                      }
+                    >
+                      <option value="User">
+                        User
+                      </option>
 
-                    <option value="Admin">
-                      Admin
-                    </option>
-                  </select>
-                </div>
+                      <option value="Admin">
+                        Admin
+                      </option>
+                    </select>
+
+                    {usuarioEditando.id ===
+                      user?.id && (
+                      <small>
+                        Você não pode
+                        alterar o perfil
+                        da sua própria
+                        conta.
+                      </small>
+                    )}
+                  </div>
+                )}
+
+                {!usuarioEditando && (
+                  <div className="form-group">
+                    <label htmlFor="senha">
+                      Senha
+                    </label>
+
+                    <input
+                      id="senha"
+                      name="senha"
+                      type="password"
+                      value={
+                        form.senha
+                      }
+                      onChange={
+                        handleChange
+                      }
+                      placeholder="Senha inicial"
+                      disabled={
+                        salvando
+                      }
+                      required
+                      minLength={
+                        6
+                      }
+                    />
+                  </div>
+                )}
+
+                {!usuarioEditando && (
+                  <div className="user-form-info">
+                    O novo usuário será
+                    criado inicialmente
+                    com o perfil User.
+                  </div>
+                )}
 
                 <div className="modal-actions">
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={fecharModal}
+                    onClick={
+                      fecharModal
+                    }
+                    disabled={
+                      salvando
+                    }
                   >
                     Cancelar
                   </button>
@@ -392,10 +832,15 @@ function Usuarios() {
                   <button
                     type="submit"
                     className="primary-button"
+                    disabled={
+                      salvando
+                    }
                   >
-                    {usuarioEditando
-                      ? "Salvar alterações"
-                      : "Criar usuário"}
+                    {salvando
+                      ? "Salvando..."
+                      : usuarioEditando
+                        ? "Salvar alterações"
+                        : "Criar usuário"}
                   </button>
                 </div>
               </form>

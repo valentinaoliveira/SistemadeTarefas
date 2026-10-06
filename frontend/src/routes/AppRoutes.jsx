@@ -6,6 +6,9 @@ import {
 
 import Layout from "../components/layout/Layout";
 
+import ProtectedRoute from "./ProtectedRoute";
+import AdminRoute from "./AdminRoute";
+
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Tarefas from "../pages/Tarefas";
@@ -20,21 +23,25 @@ function AppRoutes() {
         element={<Login />}
       />
 
-      <Route element={<Layout />}>
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
 
-        <Route
-          path="/tarefas"
-          element={<Tarefas />}
-        />
+          <Route
+            path="/tarefas"
+            element={<Tarefas />}
+          />
 
-        <Route
-          path="/usuarios"
-          element={<Usuarios />}
-        />
+          <Route element={<AdminRoute />}>
+            <Route
+              path="/usuarios"
+              element={<Usuarios />}
+            />
+          </Route>
+        </Route>
       </Route>
 
       <Route

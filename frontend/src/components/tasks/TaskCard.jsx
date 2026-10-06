@@ -38,11 +38,21 @@ function TaskCard({
   }
 
   function getPriorityClass(prioridade) {
+    if (!prioridade) {
+      return "media";
+    }
+
     return prioridade
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
   }
+
+  const prioridade =
+    tarefa.prioridade || "Média";
+
+  const status =
+    tarefa.status || "Pendente";
 
   return (
     <motion.article
@@ -67,17 +77,19 @@ function TaskCard({
       <div className="task-card-top">
         <span
           className={`task-priority ${getPriorityClass(
-            tarefa.prioridade
+            prioridade
           )}`}
         >
-          {tarefa.prioridade}
+          {prioridade}
         </span>
 
         <div className="task-actions">
           <button
             type="button"
             title="Editar tarefa"
-            onClick={() => onEdit(tarefa)}
+            onClick={() =>
+              onEdit(tarefa)
+            }
           >
             <Edit3 size={17} />
           </button>
@@ -86,14 +98,18 @@ function TaskCard({
             type="button"
             className="delete"
             title="Excluir tarefa"
-            onClick={() => onDelete(tarefa.id)}
+            onClick={() =>
+              onDelete(tarefa.id)
+            }
           >
             <Trash2 size={17} />
           </button>
         </div>
       </div>
 
-      <h3>{tarefa.titulo}</h3>
+      <h3>
+        {tarefa.titulo}
+      </h3>
 
       <p className="task-description">
         {tarefa.descricao ||
@@ -103,12 +119,12 @@ function TaskCard({
       <div className="task-card-footer">
         <span
           className={`task-status ${getStatusClass(
-            tarefa.status
+            status
           )}`}
         >
-          {getStatusIcon(tarefa.status)}
+          {getStatusIcon(status)}
 
-          {tarefa.status}
+          {status}
         </span>
       </div>
     </motion.article>
