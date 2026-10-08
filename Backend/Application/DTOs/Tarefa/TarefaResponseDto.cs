@@ -1,3 +1,4 @@
+
 using SistemaTarefas.Domain.Enums;
 
 namespace SistemaTarefas.Application.DTOs.Tarefa;
@@ -17,6 +18,8 @@ public class TarefaResponseDto
     public DateTime DataCriacao { get; set; }
 
     public DateTime? DataConclusao { get; set; }
+
+    public DateTime? DataVencimento { get; set; }
 
     public int UsuarioId { get; set; }
 }

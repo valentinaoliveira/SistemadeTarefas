@@ -1,3 +1,4 @@
+
 using SistemaTarefas.Domain.Enums;
 
 namespace SistemaTarefas.Application.DTOs.Tarefa;
@@ -13,4 +14,6 @@ public class AtualizarTarefaDto
     public Prioridade Prioridade { get; set; }
 
     public DateTime? DataConclusao { get; set; }
+
+    public DateTime? DataVencimento { get; set; }
 }

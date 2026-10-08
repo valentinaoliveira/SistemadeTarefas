@@ -1,3 +1,4 @@
+
 using SistemaTarefas.Application.DTOs.Tarefa;
 using SistemaTarefas.Application.Interfaces;
 using SistemaTarefas.Domain.Entities;
@@ -50,6 +51,7 @@ public class TarefaService : ITarefaService
             Descricao = dto.Descricao,
             Status = dto.Status,
             Prioridade = dto.Prioridade,
+            DataVencimento = dto.DataVencimento,
             UsuarioId = usuarioId,
             DataCriacao = DateTime.UtcNow
         };
@@ -73,6 +75,7 @@ public class TarefaService : ITarefaService
         tarefa.Status = dto.Status;
         tarefa.Prioridade = dto.Prioridade;
         tarefa.DataConclusao = dto.DataConclusao;
+        tarefa.DataVencimento = dto.DataVencimento;
 
         await _repository.UpdateAsync(tarefa);
 
@@ -103,6 +106,7 @@ public class TarefaService : ITarefaService
             Prioridade = tarefa.Prioridade,
             DataCriacao = tarefa.DataCriacao,
             DataConclusao = tarefa.DataConclusao,
+            DataVencimento = tarefa.DataVencimento,
             UsuarioId = tarefa.UsuarioId
         };
     }
