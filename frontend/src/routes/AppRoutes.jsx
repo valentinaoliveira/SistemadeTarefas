@@ -13,6 +13,7 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Tarefas from "../pages/Tarefas";
 import Usuarios from "../pages/Usuarios";
+import MeuPerfil from "../pages/MeuPerfil";
 import NotFound from "../pages/NotFound";
 
 function AppRoutes() {
@@ -33,6 +34,11 @@ function AppRoutes() {
           <Route
             path="/tarefas"
             element={<Tarefas />}
+          />
+
+          <Route
+            path="/perfil"
+            element={<MeuPerfil />}
           />
 
           <Route element={<AdminRoute />}>

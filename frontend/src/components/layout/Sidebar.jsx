@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  UserCircle,
   Users,
 } from "lucide-react";
 
@@ -15,11 +16,13 @@ import { useAuth } from "../../contexts/AuthContext";
 function Sidebar() {
   const navigate = useNavigate();
 
-  const { user, logout } = useAuth();
+  const {
+    user,
+    logout,
+  } = useAuth();
 
   function handleLogout() {
     logout();
-
     navigate("/");
   }
 
@@ -66,19 +69,37 @@ function Sidebar() {
           </span>
         </NavLink>
 
-       {user?.role === "Admin" && (
-  <NavLink
-    to="/usuarios"
-    className={({ isActive }) =>
-      isActive
-        ? "sidebar-link active"
-        : "sidebar-link"
-    }
-  >
-    <Users size={20} />
-    <span>Usuários</span>
-  </NavLink>
-)}
+        <NavLink
+          to="/perfil"
+          className={({ isActive }) =>
+            isActive
+              ? "sidebar-link active"
+              : "sidebar-link"
+          }
+        >
+          <UserCircle size={20} />
+
+          <span>
+            Meu Perfil
+          </span>
+        </NavLink>
+
+        {user?.role === "Admin" && (
+          <NavLink
+            to="/usuarios"
+            className={({ isActive }) =>
+              isActive
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
+            <Users size={20} />
+
+            <span>
+              Usuários
+            </span>
+          </NavLink>
+        )}
       </nav>
 
       <button
