@@ -40,12 +40,17 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<UsuarioResponseDto>
-        CreateAsync(CriarUsuarioDto dto)
+        CreateAsync(
+            CriarUsuarioDto dto)
     {
+        var email =
+            dto.Email
+                .Trim()
+                .ToLowerInvariant();
+
         var emailExiste =
-            await _repository.GetByEmailAsync(
-                dto.Email
-            );
+            await _repository
+                .GetByEmailAsync(email);
 
         if (emailExiste != null)
         {
@@ -56,72 +61,89 @@ public class UsuarioService : IUsuarioService
 
         var usuario = new Usuario
         {
-            Nome = dto.Nome,
+            Nome = dto.Nome.Trim(),
 
-            Email = dto.Email,
+            Email = email,
 
             PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword(
-                    dto.Senha
-                ),
+                BCrypt.Net.BCrypt
+                    .HashPassword(
+                        dto.Senha
+                    ),
 
             Role = UserRole.User
         };
 
         var usuarioCriado =
-            await _repository.AddAsync(usuario);
+            await _repository
+                .AddAsync(usuario);
 
         return MapToResponse(
             usuarioCriado
         );
     }
 
-    public async Task<bool> UpdateAsync(
-        int id,
-        AtualizarUsuarioDto dto)
+    public async Task<bool>
+        UpdateAsync(
+            int id,
+            AtualizarUsuarioDto dto)
     {
         var usuario =
-            await _repository.GetByIdAsync(id);
+            await _repository
+                .GetByIdAsync(id);
 
         if (usuario == null)
             return false;
 
-        var emailExistente =
-            await _repository.GetByEmailAsync(
-                dto.Email
-            );
+        var email =
+            dto.Email
+                .Trim()
+                .ToLowerInvariant();
 
-        if (emailExistente != null &&
-            emailExistente.Id != id)
+        var emailExistente =
+            await _repository
+                .GetByEmailAsync(email);
+
+        if (
+            emailExistente != null &&
+            emailExistente.Id != id
+        )
         {
             throw new InvalidOperationException(
                 "Este e-mail já está sendo utilizado."
             );
         }
 
-        usuario.Nome = dto.Nome;
-        usuario.Email = dto.Email;
+        usuario.Nome =
+            dto.Nome.Trim();
 
-        await _repository.UpdateAsync(
-            usuario
-        );
+        usuario.Email =
+            email;
+
+        await _repository
+            .UpdateAsync(usuario);
 
         return true;
     }
 
-    public async Task<bool> AlterarRoleAsync(
-        int id,
-        UserRole role)
+    public async Task<bool>
+        AlterarRoleAsync(
+            int id,
+            UserRole role)
     {
         var usuario =
-            await _repository.GetByIdAsync(id);
+            await _repository
+                .GetByIdAsync(id);
 
         if (usuario == null)
             return false;
 
-        if (!Enum.IsDefined(
+        if (
+            !Enum.IsDefined(
                 typeof(UserRole),
-                role))
+                role
+            )
+        )
         {
             throw new InvalidOperationException(
                 "Perfil de usuário inválido."
@@ -130,31 +152,117 @@ public class UsuarioService : IUsuarioService
 
         usuario.Role = role;
 
-        await _repository.UpdateAsync(
-            usuario
-        );
+        await _repository
+            .UpdateAsync(usuario);
 
         return true;
     }
 
-    public async Task<bool> DeleteAsync(
-        int id)
+    public async Task<bool>
+        AlterarSenhaAsync(
+            int id,
+            AlterarSenhaUsuarioDto dto)
     {
         var usuario =
-            await _repository.GetByIdAsync(id);
+            await _repository
+                .GetByIdAsync(id);
 
         if (usuario == null)
             return false;
 
-        await _repository.DeleteAsync(
-            usuario
-        );
+        if (
+            string.IsNullOrWhiteSpace(
+                dto.SenhaAtual
+            ) ||
+            string.IsNullOrWhiteSpace(
+                dto.NovaSenha
+            ) ||
+            string.IsNullOrWhiteSpace(
+                dto.ConfirmarNovaSenha
+            )
+        )
+        {
+            throw new InvalidOperationException(
+                "Preencha todos os campos de senha."
+            );
+        }
+
+        var senhaAtualCorreta =
+            BCrypt.Net.BCrypt.Verify(
+                dto.SenhaAtual,
+                usuario.PasswordHash
+            );
+
+        if (!senhaAtualCorreta)
+        {
+            throw new InvalidOperationException(
+                "A senha atual está incorreta."
+            );
+        }
+
+        if (
+            dto.NovaSenha.Length < 6
+        )
+        {
+            throw new InvalidOperationException(
+                "A nova senha deve possuir pelo menos 6 caracteres."
+            );
+        }
+
+        if (
+            dto.NovaSenha !=
+            dto.ConfirmarNovaSenha
+        )
+        {
+            throw new InvalidOperationException(
+                "A nova senha e a confirmação não são iguais."
+            );
+        }
+
+        var mesmaSenha =
+            BCrypt.Net.BCrypt.Verify(
+                dto.NovaSenha,
+                usuario.PasswordHash
+            );
+
+        if (mesmaSenha)
+        {
+            throw new InvalidOperationException(
+                "A nova senha deve ser diferente da senha atual."
+            );
+        }
+
+        usuario.PasswordHash =
+            BCrypt.Net.BCrypt
+                .HashPassword(
+                    dto.NovaSenha
+                );
+
+        await _repository
+            .UpdateAsync(usuario);
+
+        return true;
+    }
+
+    public async Task<bool>
+        DeleteAsync(int id)
+    {
+        var usuario =
+            await _repository
+                .GetByIdAsync(id);
+
+        if (usuario == null)
+            return false;
+
+        await _repository
+            .DeleteAsync(usuario);
 
         return true;
     }
 
     private static UsuarioResponseDto
-        MapToResponse(Usuario usuario)
+        MapToResponse(
+            Usuario usuario)
     {
         return new UsuarioResponseDto
         {

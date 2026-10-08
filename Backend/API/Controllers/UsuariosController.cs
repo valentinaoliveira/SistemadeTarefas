@@ -1,6 +1,8 @@
 using System.Security.Claims;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using SistemaTarefas.Application.DTOs.Usuario;
 using SistemaTarefas.Application.Interfaces;
 
@@ -20,9 +22,10 @@ public class UsuariosController : ControllerBase
 
     private int GetUsuarioId()
     {
-        var id = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        var id =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
 
         if (string.IsNullOrEmpty(id))
         {
@@ -37,48 +40,67 @@ public class UsuariosController : ControllerBase
         return User.IsInRole("Admin");
     }
 
-    // Cadastro público
+    // =====================================================
+    // CRIAR USUÁRIO
+    // =====================================================
+
     [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> Criar(
-        [FromBody] CriarUsuarioDto dto)
+    public async Task<IActionResult>
+        Criar(
+            [FromBody]
+            CriarUsuarioDto dto)
     {
         try
         {
             var usuario =
-                await _usuarioService.CreateAsync(dto);
+                await _usuarioService
+                    .CreateAsync(dto);
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = usuario.Id },
+                new
+                {
+                    id = usuario.Id
+                },
                 usuario
             );
         }
-        catch (InvalidOperationException ex)
+        catch (
+            InvalidOperationException ex)
         {
-            return BadRequest(new
-            {
-                mensagem = ex.Message
-            });
+            return BadRequest(
+                new
+                {
+                    mensagem = ex.Message
+                }
+            );
         }
     }
 
-    // Usuário pode consultar a si mesmo.
-    // Admin pode consultar qualquer usuário.
+    // =====================================================
+    // BUSCAR USUÁRIO
+    // =====================================================
+
     [Authorize]
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult>
+        GetById(int id)
     {
-        var usuarioLogadoId = GetUsuarioId();
+        var usuarioLogadoId =
+            GetUsuarioId();
 
-        if (!UsuarioEhAdmin() &&
-            usuarioLogadoId != id)
+        if (
+            !UsuarioEhAdmin() &&
+            usuarioLogadoId != id
+        )
         {
             return Forbid();
         }
 
         var usuario =
-            await _usuarioService.GetByIdAsync(id);
+            await _usuarioService
+                .GetByIdAsync(id);
 
         if (usuario == null)
         {
@@ -88,29 +110,42 @@ public class UsuariosController : ControllerBase
         return Ok(usuario);
     }
 
-    // Somente Admin lista todos os usuários.
+    // =====================================================
+    // LISTAR USUÁRIOS
+    // SOMENTE ADMIN
+    // =====================================================
+
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult>
+        GetAll()
     {
         var usuarios =
-            await _usuarioService.GetAllAsync();
+            await _usuarioService
+                .GetAllAsync();
 
         return Ok(usuarios);
     }
 
-    // Usuário pode alterar a si mesmo.
-    // Admin pode alterar qualquer usuário.
+    // =====================================================
+    // ATUALIZAR NOME / E-MAIL
+    // =====================================================
+
     [Authorize]
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Atualizar(
-        int id,
-        [FromBody] AtualizarUsuarioDto dto)
+    public async Task<IActionResult>
+        Atualizar(
+            int id,
+            [FromBody]
+            AtualizarUsuarioDto dto)
     {
-        var usuarioLogadoId = GetUsuarioId();
+        var usuarioLogadoId =
+            GetUsuarioId();
 
-        if (!UsuarioEhAdmin() &&
-            usuarioLogadoId != id)
+        if (
+            !UsuarioEhAdmin() &&
+            usuarioLogadoId != id
+        )
         {
             return Forbid();
         }
@@ -118,10 +153,11 @@ public class UsuariosController : ControllerBase
         try
         {
             var atualizado =
-                await _usuarioService.UpdateAsync(
-                    id,
-                    dto
-                );
+                await _usuarioService
+                    .UpdateAsync(
+                        id,
+                        dto
+                    );
 
             if (!atualizado)
             {
@@ -130,76 +166,152 @@ public class UsuariosController : ControllerBase
 
             return NoContent();
         }
-        catch (InvalidOperationException ex)
+        catch (
+            InvalidOperationException ex)
         {
-            return BadRequest(new
+            return BadRequest(
+                new
+                {
+                    mensagem = ex.Message
+                }
+            );
+        }
+    }
+
+    // =====================================================
+    // ALTERAR A PRÓPRIA SENHA
+    // =====================================================
+
+    [Authorize]
+    [HttpPatch("me/senha")]
+    public async Task<IActionResult>
+        AlterarMinhaSenha(
+            [FromBody]
+            AlterarSenhaUsuarioDto dto)
+    {
+        var usuarioLogadoId =
+            GetUsuarioId();
+
+        try
+        {
+            var atualizado =
+                await _usuarioService
+                    .AlterarSenhaAsync(
+                        usuarioLogadoId,
+                        dto
+                    );
+
+            if (!atualizado)
             {
-                mensagem = ex.Message
-            });
-        }
-    }
-[Authorize(Roles = "Admin")]
-[HttpPatch("{id:int}/role")]
-public async Task<IActionResult> AlterarRole(
-    int id,
-    [FromBody] AlterarRoleUsuarioDto dto)
-{
-    var usuarioLogadoId = GetUsuarioId();
-
-    if (usuarioLogadoId == id)
-    {
-        return BadRequest(new
-        {
-            mensagem =
-                "Você não pode alterar o perfil da sua própria conta."
-        });
-    }
-
-    try
-    {
-        var atualizado =
-            await _usuarioService
-                .AlterarRoleAsync(
-                    id,
-                    dto.Role
+                return NotFound(
+                    new
+                    {
+                        mensagem =
+                            "Usuário não encontrado."
+                    }
                 );
+            }
 
-        if (!atualizado)
+            return NoContent();
+        }
+        catch (
+            InvalidOperationException ex)
         {
-            return NotFound();
+            return BadRequest(
+                new
+                {
+                    mensagem = ex.Message
+                }
+            );
+        }
+    }
+
+    // =====================================================
+    // ALTERAR ROLE
+    // SOMENTE ADMIN
+    // =====================================================
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id:int}/role")]
+    public async Task<IActionResult>
+        AlterarRole(
+            int id,
+            [FromBody]
+            AlterarRoleUsuarioDto dto)
+    {
+        var usuarioLogadoId =
+            GetUsuarioId();
+
+        if (
+            usuarioLogadoId == id
+        )
+        {
+            return BadRequest(
+                new
+                {
+                    mensagem =
+                        "Você não pode alterar o perfil da sua própria conta."
+                }
+            );
         }
 
-        return NoContent();
-    }
-    catch (InvalidOperationException ex)
-    {
-        return BadRequest(new
+        try
         {
-            mensagem = ex.Message
-        });
+            var atualizado =
+                await _usuarioService
+                    .AlterarRoleAsync(
+                        id,
+                        dto.Role
+                    );
+
+            if (!atualizado)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+        catch (
+            InvalidOperationException ex)
+        {
+            return BadRequest(
+                new
+                {
+                    mensagem = ex.Message
+                }
+            );
+        }
     }
-}
-    // Somente Admin pode excluir usuários.
+
+    // =====================================================
+    // EXCLUIR USUÁRIO
+    // SOMENTE ADMIN
+    // =====================================================
+
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
-    
-    public async Task<IActionResult> Excluir(int id)
+    public async Task<IActionResult>
+        Excluir(int id)
     {
-        var usuarioLogadoId = GetUsuarioId();
+        var usuarioLogadoId =
+            GetUsuarioId();
 
-        // Evita que o Admin exclua a própria conta
-        // enquanto está utilizando o sistema.
-        if (usuarioLogadoId == id)
+        if (
+            usuarioLogadoId == id
+        )
         {
-            return BadRequest(new
-            {
-                mensagem =
-                    "Você não pode excluir sua própria conta."
-            });
+            return BadRequest(
+                new
+                {
+                    mensagem =
+                        "Você não pode excluir sua própria conta."
+                }
+            );
         }
 
         var excluido =
-            await _usuarioService.DeleteAsync(id);
+            await _usuarioService
+                .DeleteAsync(id);
 
         if (!excluido)
         {
