@@ -1,0 +1,114 @@
+/* CABEÇALHO DO DASHBOARD */
+.dashboard-new .dashboard-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.dashboard-new .dashboard-heading .page-title { margin: 0; }
+.dashboard-new .dashboard-heading .primary-button { flex-shrink: 0; }
+
+/* BARRA DE PROGRESSO */
+.dashboard-progress { padding: 24px; margin-bottom: 20px; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; }
+.dashboard-progress-top, .dashboard-progress-title { display: flex; align-items: center; gap: 14px; }
+.dashboard-progress-top { justify-content: space-between; margin-bottom: 20px; }
+.dashboard-progress-symbol { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: #eef2ff; color: #4f46e5; }
+.dashboard-progress-title h2 { margin-bottom: 4px; font-size: 17px; }
+.dashboard-progress-title p { color: #6b7280; font-size: 13px; }
+.dashboard-progress-top > strong { color: #4f46e5; font-size: 28px; }
+.dashboard-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: #e5e7eb; }
+.dashboard-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4f46e5, #818cf8); transition: width .35s ease; }
+
+/* INDICADORES */
+.dashboard-new .dashboard-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+.dashboard-new .dashboard-card { min-height: 104px; padding: 18px; }
+.dashboard-new .dashboard-card strong { font-size: 27px; }
+.dashboard-new .dashboard-card-icon { flex-shrink: 0; }
+
+/* PAINÉIS E LISTAS */
+.dashboard-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.dashboard-new .dashboard-panel { min-width: 0; padding: 22px; }
+.dashboard-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dashboard-panel-header > svg { flex-shrink: 0; color: #6b7280; }
+.dashboard-items { display: flex; flex-direction: column; }
+.dashboard-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 66px; padding: 12px 0; border-top: 1px solid #f3f4f6; }
+.dashboard-item-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.dashboard-item-info strong { overflow-wrap: anywhere; font-size: 14px; }
+.dashboard-item-info > span { color: #6b7280; font-size: 12px; }
+.dashboard-empty { padding: 18px 0; color: #6b7280; font-size: 13px; }
+.dashboard-text-link { display: inline-flex; align-items: center; gap: 5px; padding: 5px; border: 0; background: transparent; color: #4f46e5; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dashboard-status-pill { padding: 6px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.dashboard-status-pill.completed { background: #ecfdf5; color: #047857; }
+.dashboard-status-pill.progress { background: #eff6ff; color: #2563eb; }
+.dashboard-status-pill.pending { background: #fff7ed; color: #c2410c; }
+
+/* MODO ESCURO */
+[data-theme="dark"] .dashboard-progress { background: #1f2937; border-color: #374151; }
+[data-theme="dark"] .dashboard-progress-symbol { background: #312e81; color: #c7d2fe; }
+[data-theme="dark"] .dashboard-progress-top > strong { color: #a5b4fc; }
+[data-theme="dark"] .dashboard-progress-track { background: #374151; }
+[data-theme="dark"] .dashboard-progress-title p, [data-theme="dark"] .dashboard-item-info > span, [data-theme="dark"] .dashboard-empty, [data-theme="dark"] .dashboard-panel-header > svg { color: #9ca3af; }
+[data-theme="dark"] .dashboard-item { border-color: #374151; }
+[data-theme="dark"] .dashboard-text-link { color: #a5b4fc; }
+[data-theme="dark"] .dashboard-status-pill.completed { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .dashboard-status-pill.progress { background: #1e3a8a; color: #bfdbfe; }
+[data-theme="dark"] .dashboard-status-pill.pending { background: #431407; color: #fdba74; }
+
+/* RESPONSIVIDADE */
+@media (max-width: 1150px) { .dashboard-new .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-sections { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .dashboard-new .dashboard-heading { align-items: stretch; flex-direction: column; } .dashboard-new .dashboard-stats { grid-template-columns: 1fr; } .dashboard-progress { padding: 18px; } .dashboard-new .dashboard-panel { padding: 18px; } .dashboard-item { align-items: flex-start; } }
+
+
+/* DASHBOARD - ÍCONES DOS INDICADORES */
+
+.dashboard-card-icon.overdue {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.dashboard-card-icon.soon {
+  background: #fff7ed;
+  color: #d97706;
+}
+
+/* DASHBOARD - SITUAÇÃO DOS VENCIMENTOS */
+
+.dashboard-deadline-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-deadline-badge.overdue {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.dashboard-deadline-badge.soon {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.dashboard-deadline-badge.normal {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* DASHBOARD - CORES NO MODO ESCURO */
+
+[data-theme="dark"] .dashboard-card-icon.overdue,
+[data-theme="dark"] .dashboard-deadline-badge.overdue {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .dashboard-card-icon.soon,
+[data-theme="dark"] .dashboard-deadline-badge.soon {
+  background: #431407;
+  color: #fdba74;
+}
+
+[data-theme="dark"] .dashboard-deadline-badge.normal {
+  background: #1e3a8a;
+  color: #bfdbfe;
+}
