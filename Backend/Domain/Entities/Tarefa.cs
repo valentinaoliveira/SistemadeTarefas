@@ -1,3 +1,4 @@
+
 using SistemaTarefas.Domain.Enums;
 
 namespace SistemaTarefas.Domain.Entities;
@@ -17,6 +18,9 @@ public class Tarefa
     public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
     public DateTime? DataConclusao { get; set; }
+
+    // PRAZO DE VENCIMENTO
+    public DateTime? DataVencimento { get; set; }
 
     public int UsuarioId { get; set; }
 

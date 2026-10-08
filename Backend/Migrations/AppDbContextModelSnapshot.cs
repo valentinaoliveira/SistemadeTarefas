@@ -15,7 +15,7 @@ namespace SistemaTarefas.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
             modelBuilder.Entity("SistemaTarefas.Domain.Entities.Tarefa", b =>
                 {
@@ -27,6 +27,9 @@ namespace SistemaTarefas.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DataVencimento")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Descricao")
